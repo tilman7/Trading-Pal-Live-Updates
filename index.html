@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-900">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Trading Pal</title>
+
+    <!-- App / PWA icons (used for desktop shortcuts + iOS home screen). Not visible in the UI. -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+    <meta name="theme-color" content="#000000" />
+    <!-- Tailwind CSS via CDN. Using v2 for broad browser support -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <!-- Chart.js for analytics charts -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"
+      defer
+    ></script>
+    <!-- Import an elegant sans-serif font -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /*
+        Custom design system for a premium, glassy trading dashboard.
+        We define CSS variables for colors so the palette is easy to tweak.
+      */
+      :root {
+        /* Dark backgrounds */
+        /* Use almost pure black backgrounds to eliminate the blue tint */
+        --bg-primary: #000000;
+        --bg-secondary: #050505;
+        /* Glass card colors */
+        --card-bg: rgba(255, 255, 255, 0.08);
+        --card-bg-hover: rgba(255, 255, 255, 0.13);
+        /* Accent colours */
+        --accent-start: #7c3aed; /* violet */
+        --accent-end: #60a5fa;   /* blue */
+        /* Text colours */
+        --text-light: #e2e8f0;
+        --text-muted: #94a3b8;
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        /* Remove the diagonal gradient to keep the background purely dark */
+        background: var(--bg-primary);
+        color: var(--text-light);
+      }
+
+      /* iOS Safari: use dynamic viewport units so the page fills behind the address bar */
+      html, body { height: 100%; }
+      body { min-height: 100dvh; }
+      #app, #main { min-height: 100dvh; }
+
+      /* Respect the iPhone notch while still allowing the background to extend underneath Safari UI */
+      #top-bar { padding-top: calc(env(safe-area-inset-top, 0px) + 1rem); }
+
+      /* Glass card base style with smooth transitions */
+      .glass {
+        background: var(--card-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 1rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        transition: background 0.3s ease, transform 0.3s ease;
+      }
+
+      .glass:hover {
+        background: var(--card-bg-hover);
+        transform: translateY(-2px);
+      }
+
+      /* Active nav link colouring */
+      .nav-active {
+        color: var(--accent-end);
+      }
+
+      /* Range slider thumb colours to match the palette */
+      input[type='range']::-webkit-slider-thumb {
+        background: var(--accent-end);
+      }
+      input[type='range']::-moz-range-thumb {
+        background: var(--accent-end);
+      }
+
+      /* Quick action buttons with subtle radial gradients and hover scaling */
+      .quick-action {
+        border-radius: 1.25rem;
+        /* Give each quick action a translucent card effect with its own colourful glow on hover */
+        background: var(--card-bg);
+        transition: transform 0.3s ease, background 0.3s ease;
+      }
+
+      .quick-action:hover {
+        transform: translateY(-4px) scale(1.04);
+        background: var(--card-bg-hover);
+      }
+
+      /* Individual quick-action colour themes */
+      .qa-morning {
+        /* warm sunrise gradient */
+        background: linear-gradient(135deg, rgba(251, 191, 36, 0.4), rgba(245, 158, 11, 0.3));
+      }
+      .qa-evening {
+        /* twilight purple gradient */
+        background: linear-gradient(135deg, rgba(192, 132, 252, 0.4), rgba(168, 85, 247, 0.3));
+      }
+      .qa-analytics {
+        /* cool analytics gradient */
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(6, 182, 214, 0.3));
+      }
+      .qa-settings {
+        /* neutral teal gradient */
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.4), rgba(59, 130, 246, 0.3));
+      }
+
+      /* Quick action icon colours */
+      .qa-morning svg { color: #fbbf24; }
+      .qa-evening svg { color: #c084fc; }
+      .qa-analytics svg { color: #3b82f6; }
+      /* Slight optical centering for the analytics icon so it lines up with the others */
+      .qa-analytics .icon svg { transform: translateX(-0.75px); }
+
+      .qa-settings svg { color: #10b981; }
+
+      /* Habit tracker quick action colour theme */
+      .qa-habits {
+        /* playful gradient for habits */
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.4), rgba(16, 185, 129, 0.3));
+      }
+      .qa-habits svg { color: #22c55e; }
+
+      /* Analytics summary cards with subtle tint backgrounds to visually distinguish metrics */
+      .stat-compliance {
+        background: rgba(124, 58, 237, 0.15);
+        border: 1px solid rgba(124, 58, 237, 0.3);
+      }
+      .stat-sessions {
+        background: rgba(16, 185, 129, 0.15);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
+      .stat-trades {
+        background: rgba(251, 191, 36, 0.15);
+        border: 1px solid rgba(251, 191, 36, 0.3);
+      }
+      .stat-avgpnl {
+        background: rgba(96, 165, 250, 0.15);
+        border: 1px solid rgba(96, 165, 250, 0.3);
+      }
+
+      /* Accent buttons (e.g. start streak) */
+      .accent-btn {
+        background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+        color: #ffffff;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        transition: filter 0.3s ease, transform 0.3s ease;
+      }
+
+      .accent-btn:hover {
+        filter: brightness(1.1);
+        transform: translateY(-2px);
+      }
+
+      /* Fade in animation for page transitions */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .fade-in {
+        animation: fadeInUp 0.5s ease both;
+      }
+
+      /* Habit progress text styling */
+      #habit-progress-text {
+        color: var(--text-light);
+      }
+
+      /* Habit tracker custom cards with subtle tint backgrounds matching the green habit palette */
+      .habit-list-card {
+        background: rgba(34, 197, 94, 0.12);
+        border: 1px solid rgba(34, 197, 94, 0.25);
+      }
+      .habit-summary-card {
+        background: rgba(59, 130, 246, 0.12);
+        border: 1px solid rgba(59, 130, 246, 0.25);
+      }
+      .habit-week-card {
+        background: rgba(96, 165, 250, 0.12);
+        border: 1px solid rgba(96, 165, 250, 0.25);
+      }
+      /* New habit tracker cards for heatmap, streaks and completion rate */
+      .habit-heatmap-card {
+        background: rgba(96, 165, 250, 0.12);
+        border: 1px solid rgba(96, 165, 250, 0.25);
+      }
+      .habit-streak-card {
+        background: rgba(192, 132, 252, 0.12);
+        border: 1px solid rgba(192, 132, 252, 0.25);
+      }
+      .habit-rate-card {
+        background: rgba(251, 146, 60, 0.12);
+        border: 1px solid rgba(251, 146, 60, 0.25);
+      }
+
+      /* Habit list: individual liquid-glass items */
+      .habit-item-card {
+        width: 100%;
+        padding: 0.9rem 1rem;
+        border-radius: 1rem;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        -webkit-backdrop-filter: blur(16px);
+        backdrop-filter: blur(16px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+        transition: transform 120ms ease, background 180ms ease, border-color 180ms ease;
+      }
+      .habit-item-card:hover {
+        transform: translateY(-1px);
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.16);
+      }
+      .habit-item-dot {
+        width: 0.55rem;
+        height: 0.55rem;
+        border-radius: 9999px;
+        background: rgba(34, 197, 94, 0.55);
+        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.10);
+      }
+      .habit-item-done { opacity: 1; }
+      .habit-item-done .habit-name { text-decoration: none; }
+      .habit-item-done .habit-item-dot { }
+
+      /* Icon colours for new habit cards */
+      .habit-heatmap-card svg { color: #60a5fa; }
+      .habit-streak-card svg { color: #c084fc; }
+      .habit-rate-card svg { color: #fb923c; }
+
+      /* Heatmap squares for habit completion grid */
+      #habit-heatmap .heat-square,
+      .heat-square {
+        width: 0.75rem;
+        height: 0.75rem;
+        border-radius: 0.2rem;
+        display: inline-block;
+      }
+
+      /* Settings page tinted cards */
+      /* Settings page cards unified styling. Each settings card uses the same
+         dark background and border to maintain a cohesive look. */
+      .settings-rules-card,
+      .settings-limits-card,
+      .settings-habits-card,
+      .settings-data-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      /* Settings accordion toggles */
+      .settings-content.hidden {
+        display: none;
+      }
+      .settings-toggle .chevron {
+        transition: transform 0.3s ease;
+      }
+      .settings-toggle.open .chevron {
+        transform: rotate(180deg);
+      }
+      /* Enhanced settings card styling inspired by AlphaDojo. Each settings
+         container row darkens slightly on hover for better affordance, and the
+         container hides overflow so separators render cleanly. */
+      .settings-container {
+        overflow: hidden;
+      }
+      .settings-item .settings-toggle {
+        transition: background 0.2s ease;
+      }
+      .settings-item .settings-toggle:hover {
+        background: rgba(255, 255, 255, 0.05);
+      }
+      /* Icon colours inside habit cards */
+      .habit-list-card svg { color: #22c55e; }
+      .habit-summary-card svg { color: #60a5fa; }
+      .habit-week-card svg { color: #3b82f6; }
+
+      /*
+        Custom form controls to elevate the look and feel of sliders, inputs,
+        selects and checkboxes. These rules override browser defaults and
+        Tailwind’s base styles to deliver a premium, custom-designed feel
+        that matches the rest of the dark, glassy UI.  Inputs and selects
+        share a consistent dark background with subtle borders and rounded
+        corners. Checkboxes adopt the accent colour for their check mark
+        while the range slider gets its own custom track and thumb styling.
+      */
+
+      /* General input and textarea styles */
+      input[type='number'], input[type='text'], textarea {
+        background-color: #111827; /* dark slate */
+        border: 1px solid #334155; /* dark border */
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+        color: var(--text-light);
+        width: 100%;
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      input[type='number']:focus, input[type='text']:focus, textarea:focus {
+        border-color: var(--accent-end);
+        box-shadow: 0 0 0 1px var(--accent-end);
+      }
+
+      /* Custom switch component for strict mode toggle on settings page. The
+         switch uses the accent gradient when active and a neutral dark
+         background when inactive. */
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 20px;
+      }
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #555;
+        border-radius: 9999px;
+        transition: background 0.4s;
+      }
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 2px;
+        bottom: 2px;
+        background: #ffffff;
+        border-radius: 50%;
+        transition: transform 0.4s;
+      }
+      .switch input:checked + .slider {
+        background: linear-gradient(90deg, var(--accent-start), var(--accent-end));
+      }
+      .switch input:checked + .slider:before {
+        transform: translateX(20px);
+      }
+
+      /* Custom selects */
+      select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-color: #111827;
+        border: 1px solid #334155;
+        border-radius: 0.5rem;
+        padding: 0.5rem 2.5rem 0.5rem 0.5rem;
+        color: var(--text-light);
+        width: 100%;
+        background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" fill="%2394a3b8" viewBox="0 0 20 20"><path d="M6 8l4 4 4-4"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 1rem;
+      }
+      select:focus {
+        border-color: var(--accent-end);
+        box-shadow: 0 0 0 1px var(--accent-end);
+      }
+
+      /* Checkbox customisation via accent-colour (supported by modern browsers) */
+      /* Customise all native checkboxes for a premium look */
+      input[type='checkbox'] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 1.2rem;
+        height: 1.2rem;
+        border: 2px solid #334155;
+        border-radius: 0.25rem;
+        background: #111827;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        position: relative;
+      }
+      input[type='checkbox']:checked {
+        background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+        border-color: var(--accent-end);
+      }
+      input[type='checkbox']:checked::after {
+        content: '';
+        position: absolute;
+        /* position the check mark centrally within the box */
+        top: 2px;
+        left: 3px;
+        width: 0.35rem;
+        height: 0.65rem;
+        /* Draw a crisp, simple check mark */
+        border: 2px solid #ffffff;
+        border-top: none;
+        border-left: none;
+        transform: rotate(45deg);
+      }
+
+      /* Custom checkbox styling used in routine checklist */
+      .custom-checkbox-input {
+        position: absolute;
+        opacity: 0;
+      }
+      .custom-checkbox {
+        width: 1.25rem;
+        height: 1.25rem;
+        border-radius: 0.35rem;
+        border: 2px solid #334155;
+        background: #111827;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.5rem;
+        transition: background 0.2s ease, border-color 0.2s ease;
+      }
+      .custom-checkbox-input:checked + .custom-checkbox {
+        background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+        border-color: var(--accent-end);
+      }
+      .custom-checkbox-input:checked + .custom-checkbox::after {
+        content: '';
+        position: absolute;
+        left: 3px;
+        top: 2px;
+        width: 0.35rem;
+        height: 0.65rem;
+        border: 2px solid #ffffff;
+        border-top: none;
+        border-left: none;
+        transform: rotate(45deg);
+      }
+
+      /* Range slider customisation */
+      input[type='range'] {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 8px;
+        /* Base track color is dark but we override it via custom track pseudo selectors below */
+        background: #222c3b;
+        border-radius: 4px;
+        outline: none;
+      }
+      input[type='range']::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+        cursor: pointer;
+        box-shadow: 0 0 0 2px #000; /* ring around thumb */
+        margin-top: -5px; /* align thumb vertically */
+      }
+      input[type='range']::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+        cursor: pointer;
+        box-shadow: 0 0 0 2px #000;
+      }
+
+      /* Remove default fill for firefox track */
+      input[type='range']::-moz-range-track {
+        background: #222c3b;
+        border: none;
+        border-radius: 4px;
+      }
+
+      /* Custom select component styles */
+      .select-display {
+        background-color: #111827;
+        border: 1px solid #334155;
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+        color: var(--text-light);
+        cursor: pointer;
+      }
+      .select-display svg {
+        pointer-events: none;
+      }
+      .select-options {
+        background-color: #111827;
+        border: 1px solid #334155;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      }
+      .select-option:hover {
+        background-color: #1f2937;
+      }
+
+      /* Custom track colours for modern browsers */
+      input[type='range']::-webkit-slider-runnable-track {
+        height: 8px;
+        border-radius: 4px;
+        background: linear-gradient(90deg, var(--accent-start), var(--accent-end));
+      }
+      input[type='range']::-moz-range-track {
+        height: 8px;
+        border-radius: 4px;
+        background: linear-gradient(90deg, var(--accent-start), var(--accent-end));
+      }
+
+      /* Center routine/review/analytics/settings pages and give breathing room */
+      #page-routine,
+      #page-review,
+      #page-analytics,
+      #page-settings {
+        max-width: 48rem; /* approx 768px */
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      /* Drop-down menu positioning and styling */
+      #top-bar {
+        position: relative;
+      }
+      #dropdown-nav {
+        /* Position the drop-down relative to the viewport so it appears below the top bar */
+        position: fixed;
+        right: 1rem;
+        top: calc(env(safe-area-inset-top, 0px) + 4rem);
+        width: 12rem;
+        /* Darken the backdrop even further to enhance readability. A nearly opaque
+           black with slight transparency helps the white text stand out. */
+        background: rgba(0, 0, 0, 0.72);
+                -webkit-backdrop-filter: blur(18px);
+        backdrop-filter: blur(18px);
+border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        /* Ensure the drop‑down sits above other content and accepts pointer events */
+        z-index: 100;
+        pointer-events: auto;
+      }
+
+      /* Dashboard width + premium spacing */
+      #page-home {
+        max-width: 80rem; /* ~1280px */
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .action-pill {
+        border-radius: 9999px;
+        padding: 1rem 1.25rem;
+        /*
+          Keep the icon perfectly aligned across all action pills (even when
+          the label text has different lengths). We use a 3-column grid:
+          icon | centered label | spacer (same width as icon).
+        */
+        display: grid;
+        grid-template-columns: 2.25rem 1fr 2.25rem;
+        align-items: center;
+        gap: 0.75rem;
+        min-height: 4rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+      .action-pill .icon {
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 9999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.08);
+        justify-self: start;
+      }
+
+      /* Center the label while preserving a fixed icon column */
+      .action-pill > span:last-child {
+        justify-self: center;
+        text-align: center;
+      }
+      .action-pill::after {
+        content: '';
+        width: 2.25rem;
+        height: 2.25rem;
+        justify-self: end;
+      }
+
+      .dash-grid {
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+      }
+      .col-4 { grid-column: span 12 / span 12; }
+      .col-8 { grid-column: span 12 / span 12; }
+      @media (min-width: 1024px) {
+        .col-4 { grid-column: span 4 / span 4; }
+        .col-8 { grid-column: span 8 / span 8; }
+      }
+
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 0.5rem;
+      }
+      .cal-cell {
+        height: 2.25rem;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.06);
+        color: rgba(255,255,255,0.85);
+        font-size: 0.85rem;
+      }
+      .cal-cell.muted {
+        opacity: 0.35;
+      }
+      .cal-cell.today {
+        background: linear-gradient(90deg, var(--accent-start), var(--accent-end));
+        border: 1px solid rgba(255,255,255,0.12);
+        color: white;
+        font-weight: 700;
+      }
+    
+      /* Bottom navigation: floating liquid-glass bar on mobile */
+      #bottom-nav.bottom-nav-glass {
+        background: rgba(15, 15, 15, 0.48);
+        -webkit-backdrop-filter: blur(18px);
+        backdrop-filter: blur(18px);
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        box-shadow: 0 10px 35px rgba(0, 0, 0, 0.55);
+        border-radius: 1.6rem;
+
+        /* Slightly smaller height (especially in iOS "Add to Home Screen" mode) */
+        padding-top: 0.35rem;
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.35rem);
+
+        /* float + spacing */
+        left: 0.75rem !important;
+        right: 0.75rem !important;
+        bottom: 0.75rem !important;
+      }
+
+      /* Bottom nav: make icons feel properly sized + vertically centered */
+      #bottom-nav.bottom-nav-glass .nav-link {
+        padding: 0.15rem 0.5rem;
+        gap: 0.15rem;
+        min-height: 3.2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      #bottom-nav.bottom-nav-glass svg {
+        width: 1.35rem;
+        height: 1.35rem;
+      }
+      #bottom-nav.bottom-nav-glass .nav-link {
+        opacity: 0.85;
+        transition: opacity 120ms ease, transform 120ms ease;
+      }
+      #bottom-nav.bottom-nav-glass .nav-link:active {
+        transform: translateY(1px);
+        opacity: 1;
+      }
+
+      
+      /* Analytics: time range pills (AlphaDojo-ish) */
+      .analytics-filter-bar {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.10);
+        border-radius: 9999px;
+        padding: 0.35rem;
+        width: fit-content;
+      }
+      .time-filter {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.10);
+        border-radius: 9999px;
+        padding: 0.55rem 0.9rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        transition: background 140ms ease, border-color 140ms ease, transform 140ms ease, opacity 140ms ease;
+        opacity: 0.9;
+      }
+      .time-filter:hover { opacity: 1; background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.14); }
+      .time-filter:active { transform: translateY(1px); }
+      .time-filter.active {
+        background: rgba(255,255,255,0.12);
+        border-color: rgba(255,255,255,0.18);
+        opacity: 1;
+      }
+
+      /* Make room for the floating bottom nav so content continues behind it */
+      @media (max-width: 767px) {
+        main {
+          padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
+        }
+      }
+
+
+
+      /* Pretty checkmark control for habits (no square checkbox) */
+      .habit-check {
+        position: relative;
+        width: 2.0rem;
+        height: 2.0rem;
+        border-radius: 9999px;
+        border: 2px solid rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.02);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        line-height: 1;
+        color: rgba(255,255,255,0.92);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+        transition: background 160ms ease, border-color 160ms ease, transform 160ms ease, color 160ms ease;
+        flex: 0 0 auto;
+      }
+      .habit-item-card:hover .habit-check {
+        position: relative;
+        border-color: rgba(255, 255, 255, 0.22);
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .habit-check svg {
+        width: 1.1rem;
+        height: 1.1rem;
+        display: block;
+        opacity: 0;
+        transform: scale(0.92);
+        transition: opacity 140ms ease, transform 140ms ease;
+      }
+      .habit-check.is-done svg {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      .habit-check.is-done {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.30);
+        color: rgba(255,255,255,0.95);
+      }
+
+      /* Prevent iOS standalone from auto-scaling text (keeps bottom-nav identical to Safari) */
+      html { -webkit-text-size-adjust: 100%; }
+      body.is-standalone #bottom-nav.bottom-nav-glass {
+        padding-top: 0.35rem;
+        padding-bottom: 0.35rem;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem) !important;
+        left: 0.75rem !important;
+        right: 0.75rem !important;
+      }
+      body.is-standalone #bottom-nav.bottom-nav-glass svg {
+        width: 1.55rem;
+        height: 1.55rem;
+      }
+
+
+      /* Touch devices (iPhone/iPad): prevent sticky :hover states.
+         Desktop hover stays exactly as-is. */
+      @media (hover: none) and (pointer: coarse) {
+        .glass:hover {
+          background: var(--card-bg);
+          transform: none;
+        }
+        .quick-action:hover {
+          transform: none;
+        }
+        .accent-btn:hover {
+          filter: none;
+          transform: none;
+        }
+        .time-filter:hover {
+          background: rgba(255,255,255,0.06);
+          border-color: rgba(255,255,255,0.10);
+          opacity: 0.9;
+        }
+        .settings-item .settings-toggle:hover { background: transparent; }
+        .select-option:hover { background-color: #111827; }
+
+        .habit-item-card:hover {
+          transform: none;
+          background: rgba(0, 0, 0, 0.25);
+          border-color: rgba(255, 255, 255, 0.12);
+        }
+        .habit-item-card:hover .habit-check {
+          border-color: rgba(255, 255, 255, 0.18);
+          background: rgba(255, 255, 255, 0.02);
+        }
+      }
+
+      /* IMPORTANT: Do not modify the bottom nav (PWA iPhone "Add to Home Screen") rules below.
+         They are carefully tuned to prevent the bar from stretching to the screen edge. */
+
+</style>
+  </head>
+  <body class="text-gray-100 flex flex-col min-h-full">
+    <div id="app" class="flex flex-1">
+      <!-- Sidebar navigation replaced by a dropdown menu. Hide this element permanently. -->
+      <nav
+        id="sidebar"
+        class="hidden"
+      >
+        <!-- The sidebar nav is intentionally hidden. Navigation is handled by the top bar drop-down. -->
+        <div class="text-2xl font-bold mb-4">Trading Pal</div>
+        <button class="nav-link" data-page="home">Home</button>
+        <button class="nav-link" data-page="routine">Routine</button>
+        <button class="nav-link" data-page="review">Review</button>
+        <button class="nav-link" data-page="analytics">Analytics</button>
+        <button class="nav-link" data-page="settings">Settings</button>
+      </nav>
+      <!-- Main content area -->
+      <main id="main" class="flex-1 pb-20 md:pb-4 overflow-y-auto">
+        <!-- Top bar with logo and menu toggle. The logo is clickable and
+             navigates back to the home page. The menu toggle reveals a
+             drop‑down menu containing the navigation links. -->
+        <!-- Top navigation bar with logo and dropdown toggle.  The logo acts as a home link but no inline handlers are used; handlers are defined in script-v3.js.  The drop‑down menu is hidden via inline style and will be toggled via JavaScript. -->
+        <div id="top-bar" class="flex items-center justify-between p-4 md:p-6 relative">
+          <div id="logo" class="text-2xl font-bold cursor-pointer">Trading&nbsp;Pal</div>
+          <button id="menu-toggle" class="p-2 rounded focus:outline-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <nav id="dropdown-nav" class="absolute right-0 mt-2 flex flex-col space-y-2 w-48 p-4"
+            style="display: none;">
+            <button class="nav-link text-left py-2 px-3 rounded-md hover:bg-gray-700" data-page="home">Home</button>
+            <button class="nav-link text-left py-2 px-3 rounded-md hover:bg-gray-700" data-page="routine">Routine</button>
+            <button class="nav-link text-left py-2 px-3 rounded-md hover:bg-gray-700" data-page="review">Review</button>
+            <button class="nav-link text-left py-2 px-3 rounded-md hover:bg-gray-700" data-page="analytics">Analytics</button>
+            <button class="nav-link text-left py-2 px-3 rounded-md hover:bg-gray-700" data-page="habits">Habits</button>
+            <button class="nav-link text-left py-2 px-3 rounded-md hover:bg-gray-700" data-page="lessons">Lessons</button>
+            <button class="nav-link text-left py-2 px-3 rounded-md hover:bg-gray-700" data-page="activity">Activity</button>
+            <button class="nav-link text-left py-2 px-3 rounded-md hover:bg-gray-700" data-page="settings">Settings</button>
+            </nav>
+        </div>
+        <!-- Drop-down navigation menu removed here; it will be inserted inside the top‑bar -->
+        <!-- Home Page -->
+        <section id="page-home" class="p-8 space-y-6">
+          <!-- Header row -->
+          <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
+            <div>
+              <!-- Dynamic greeting updated via script to include the user's name -->
+              <h1 id="welcome-message" class="text-3xl md:text-4xl font-semibold tracking-tight">Welcome back, Trading Pal</h1>
+              <p id="market-status" class="text-sm text-gray-400 mt-1"></p>
+              <div id="extra-info" class="flex flex-wrap gap-3 mt-3 text-sm text-gray-400">
+                <div id="clock" class="px-3 py-1 rounded-full bg-white/5 border border-white/5"></div>
+                <div id="gold-price" class="px-3 py-1 rounded-full bg-white/5 border border-white/5"></div>
+              </div>
+            </div>
+            <div class="hidden lg:block text-right text-xs text-gray-500">
+              <div class="uppercase tracking-widest">Trading Pal</div>
+              <div class="mt-1">Discipline • Routine • Analytics</div>
+            </div>
+          </div>
+
+          <!-- Big action pills (filled, centered) -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <button class="action-pill quick-action qa-morning glass w-full" data-page="routine" title="Start Morning Routine">
+              <span class="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v2m0 14v2m9-9h-2M5 12H3m14.364-6.364l-1.414 1.414M7.05 16.95l-1.414 1.414m0-11.314l1.414 1.414m10.314 10.314l1.414 1.414"/>
+                </svg>
+              </span>
+              <span>Morning Routine</span>
+            </button>
+            <button class="action-pill quick-action qa-evening glass w-full" data-page="review" title="Evening Review">
+              <span class="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 118.646 3.646 7 7 0 0020.354 15.354z"/>
+                </svg>
+              </span>
+              <span>Evening Review</span>
+            </button>
+            <button class="action-pill quick-action qa-analytics glass w-full" data-page="analytics" title="Analytics">
+              <span class="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19v-6m4 6V9m4 10V3M7 19V13m-4 6V7"/>
+                </svg>
+              </span>
+              <span>Analytics</span>
+            </button>
+            <!-- Habit tracker quick action replaces the settings button on the dashboard -->
+            <button class="action-pill quick-action qa-habits glass w-full" data-page="habits" title="Habit Tracker">
+              <span class="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </span>
+              <span>Habit Tracker</span>
+            </button>
+          </div>
+
+          <!-- Removed duplicate small greeting; the dynamic greeting is now integrated into the main welcome message -->
+          <!-- Dashboard grid (fills screen better, no weird empty bottom) -->
+          <div class="grid grid-cols-12 gap-6">
+            <!-- Left: calendar / session info -->
+            <div class="glass p-6 rounded-2xl col-span-12 lg:col-span-4">
+              <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold">Calendar</h2>
+                <span id="calendar-label" class="text-xs text-gray-400"></span>
+              </div>
+              <div class="mt-4">
+                <div class="grid grid-cols-7 gap-2 text-xs text-gray-400">
+                  <div class="text-center">Mon</div><div class="text-center">Tue</div><div class="text-center">Wed</div><div class="text-center">Thu</div><div class="text-center">Fri</div><div class="text-center">Sat</div><div class="text-center">Sun</div>
+                </div>
+                <div id="calendar-grid" class="grid grid-cols-7 gap-2 mt-2"></div>
+              </div>
+              <div class="mt-5 grid grid-cols-2 gap-3">
+                <div class="bg-white/5 border border-white/5 rounded-xl p-3">
+                  <div class="text-xs text-gray-400">Market</div>
+                  <div id="market-pill" class="mt-1 text-sm font-semibold">—</div>
+                </div>
+                <div class="bg-white/5 border border-white/5 rounded-xl p-3">
+                  <div class="text-xs text-gray-400">Focus</div>
+                  <div class="mt-1 text-sm font-semibold">Build streak</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: streak / CTA hero -->
+            <div id="streak-card" class="glass p-6 rounded-2xl col-span-12 lg:col-span-8">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                <div>
+                  <h2 class="text-lg font-semibold">Your Streak</h2>
+                  <p id="streak-text" class="text-4xl md:text-5xl font-bold mt-2">0 days</p>
+                  <p class="text-sm text-gray-400 mt-2">Small wins. Same process. Every day.</p>
+                </div>
+                <div class="flex flex-col gap-3">
+                  <button id="start-streak" class="px-5 py-3 accent-btn rounded-xl">Start Morning Routine</button>
+                  <button id="secondary-streak" class="px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition transform hover:-translate-y-0.5">Open Evening Review</button>
+                  <button id="view-lessons" class="px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition transform hover:-translate-y-0.5">View All Lessons</button>
+                </div>
+              </div>
+              <!-- Display only the most recent lesson as a quote below the streak information.
+                   This keeps the card clean and inspirational. The full lessons overview is
+                   accessible via the button within the action column. -->
+              <div id="streak-lessons" class="mt-6">
+                <p id="latest-lesson-quote" class="text-base italic text-gray-400"></p>
+              </div>
+            </div>
+
+            <!-- Daily reminder card moved up for immediate visibility -->
+            <div class="glass p-6 rounded-2xl col-span-12 lg:col-span-4">
+              <h2 class="text-lg font-semibold">Daily Reminder</h2>
+              <p id="daily-quote" class="mt-2 text-base text-gray-300"></p>
+            </div>
+
+            <!-- Stats wide card -->
+            <div id="week-card" class="glass p-6 rounded-2xl col-span-12 lg:col-span-8 cursor-pointer">
+              <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold">This Week</h2>
+                <span class="text-xs text-gray-400">Auto-updates from your reviews</span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+                <div class="bg-white/5 border border-white/5 rounded-xl p-4">
+                  <p class="text-xs text-gray-400">Trades</p>
+                  <p id="week-trades" class="text-3xl font-bold mt-1">0</p>
+                </div>
+                <div class="bg-white/5 border border-white/5 rounded-xl p-4">
+                  <p class="text-xs text-gray-400">P&amp;L</p>
+                  <p id="week-pnl" class="text-3xl font-bold mt-1">$0</p>
+                </div>
+                <div class="bg-white/5 border border-white/5 rounded-xl p-4">
+                  <p class="text-xs text-gray-400">Sessions</p>
+                  <p id="week-sessions" class="text-3xl font-bold mt-1">0</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent activity card has been removed from the home dashboard.  A dedicated
+                 activity page now exists in the navigation menu for a focused view. -->
+            <!-- The recent lessons card has been removed.  Lessons will now be displayed inside the
+                 streak card to consolidate information and reduce empty space. -->
+          </div>
+        </section>
+        <!-- Routine Page (Morning Routine Wizard) -->
+        <section id="page-routine" class="p-4 space-y-4 hidden">
+          <h1 class="text-2xl font-semibold mb-4 text-center">Morning Routine</h1>
+          <div class="glass p-6 rounded-lg space-y-6 max-w-xl mx-auto">
+            <!-- Steps will be injected via script.js -->
+            <div id="routine-steps" class="space-y-4"></div>
+          </div>
+          <!-- Move navigation buttons outside the card and centre them horizontally.
+               The Back button remains hidden until later steps. -->
+          <div class="flex justify-center gap-4 mt-4">
+            <button
+              id="routine-back"
+              class="px-4 py-2 bg-gray-700 rounded-lg hidden"
+            >
+              Back
+            </button>
+            <button
+              id="routine-next"
+              class="px-4 py-2 accent-btn"
+            >
+              Next
+            </button>
+          </div>
+        </section>
+        <!-- Review Page (Evening Review) -->
+        <section id="page-review" class="p-4 space-y-4 hidden">
+          <h1 class="text-2xl font-semibold mb-4 text-center">Evening Review</h1>
+          <div class="glass p-6 rounded-lg space-y-6 max-w-xl mx-auto">
+            <form id="review-form" class="space-y-6">
+              <div>
+                <label class="block text-sm mb-1" for="review-trades">Total trades taken</label>
+                <input
+                  id="review-trades"
+                  type="range"
+                  min="0"
+                  max="20"
+                  step="1"
+                  value="0"
+                  class="w-full"
+                />
+                <div id="review-trades-value" class="text-center mt-1">0</div>
+              </div>
+              <div>
+                <label class="block text-sm mb-1" for="review-pnl">Overall P&amp;L ($)</label>
+                <input
+                  id="review-pnl"
+                  type="number"
+                  step="0.01"
+                  value="0"
+                />
+              </div>
+              <div>
+                <label id="review-follow-row" class="flex items-center gap-3 cursor-pointer text-sm">
+                  <input id="review-follow" type="checkbox" />
+                  <span>Followed your plan?</span>
+                </label>
+                <div id="rule-break-container" class="mt-2 hidden">
+                  <label class="block text-sm mb-1">Rule break</label>
+                  <div id="review-rule-select" class="relative">
+                    <div id="review-rule-display" class="select-display flex justify-between items-center">
+                      <span id="review-rule-label">Impulse</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6" />
+                      </svg>
+                    </div>
+                    <div id="review-rule-options" class="select-options absolute w-full hidden z-10 mt-1">
+                      <div class="select-option px-3 py-2 cursor-pointer" data-value="impulse">Impulse</div>
+                      <div class="select-option px-3 py-2 cursor-pointer" data-value="fomo">FOMO</div>
+                      <div class="select-option px-3 py-2 cursor-pointer" data-value="revenge">Revenge</div>
+                      <div class="select-option px-3 py-2 cursor-pointer" data-value="overtrade">Overtrading</div>
+                      <div class="select-option px-3 py-2 cursor-pointer" data-value="other">Other</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Consolidated reflection field instead of three separate fields -->
+              <div>
+                <label class="block text-sm mb-1" for="review-note">Key lesson or reflection</label>
+                <textarea
+                  id="review-note"
+                  rows="3"
+                  placeholder="What did you learn or observe today?"
+                ></textarea>
+              </div>
+            </form>
+          </div>
+          <!-- Centre the Save Review button outside the card for better hierarchy -->
+          <div class="flex justify-center mt-4">
+            <button
+              type="submit"
+              form="review-form"
+              id="save-review-btn"
+              class="px-4 py-2 accent-btn"
+            >
+              Save Review
+            </button>
+          </div>
+          <!-- The list of past reviews is now displayed on the Lessons page.  This
+               container remains for compatibility but is hidden by default. -->
+          <div id="review-list" class="space-y-2 mt-4 max-w-lg mx-auto hidden"></div>
+        </section>
+        <!-- Analytics Page -->
+        <section id="page-analytics" class="p-4 space-y-4 hidden max-w-5xl mx-auto">
+          <h1 class="text-2xl font-semibold mb-4">Analytics</h1>
+          <div class="flex flex-wrap gap-4">
+            <div class="glass stat-compliance p-4 rounded-lg flex-1 min-w-[10rem]">
+              <p class="text-sm text-gray-400">Plan Compliance</p>
+              <p id="analytics-compliance" class="text-2xl font-bold">0%</p>
+            </div>
+            <div class="glass stat-sessions p-4 rounded-lg flex-1 min-w-[10rem]">
+              <p class="text-sm text-gray-400">Sessions</p>
+              <p id="analytics-sessions" class="text-2xl font-bold">0</p>
+            </div>
+            <div class="glass stat-trades p-4 rounded-lg flex-1 min-w-[10rem]">
+              <p class="text-sm text-gray-400">Total Trades</p>
+              <p id="analytics-trades" class="text-2xl font-bold">0</p>
+            </div>
+            <div class="glass stat-avgpnl p-4 rounded-lg flex-1 min-w-[10rem]">
+              <p class="text-sm text-gray-400">Avg P&amp;L</p>
+              <p id="analytics-avgpnl" class="text-2xl font-bold">$0</p>
+            </div>
+            <div class="glass stat-winrate p-4 rounded-lg flex-1 min-w-[10rem]">
+              <p class="text-sm text-gray-400">Win Rate</p>
+              <p id="analytics-winrate" class="text-2xl font-bold">—</p>
+            </div>
+          </div>
+          <!-- Time filter -->
+          <div class="analytics-filter-bar flex gap-2 mt-4">
+            <button
+              class="time-filter"
+              data-range="week"
+            >
+              This Week
+            </button>
+            <button
+              class="time-filter"
+              data-range="month"
+            >
+              This Month
+            </button>
+            <button
+              class="time-filter"
+              data-range="three"
+            >
+              Last 3 Months
+            </button>
+          </div>
+          <div class="mt-4 md:grid md:grid-cols-2 md:gap-4 space-y-8 md:space-y-0">
+            <!-- Equity Curve line chart -->
+            <div class="glass p-4 rounded-xl">
+              <h2 class="mb-2 font-semibold">Equity Curve (%)</h2>
+              <canvas id="chart-equity" height="150"></canvas>
+            </div>
+            <!-- Plan Compliance bar chart -->
+            <div class="glass p-4 rounded-xl">
+              <h2 class="mb-2 font-semibold">Plan Compliance (%)</h2>
+              <canvas id="chart-compliance" height="150"></canvas>
+            </div>
+            <!-- Rule Break bar chart -->
+            <div class="glass p-4 rounded-xl">
+              <h2 class="mb-2 font-semibold">Rule Break Distribution</h2>
+              <canvas id="chart-rules" height="150"></canvas>
+            </div>
+            <!-- Plan Compliance distribution donut chart -->
+            <div class="glass p-4 rounded-xl">
+              <h2 class="mb-2 font-semibold">Plan Compliance Distribution</h2>
+              <canvas id="chart-compliance-donut" height="150"></canvas>
+            </div>
+</div>
+        </section>
+        <!-- Settings Page -->
+        <section id="page-settings" class="p-4 space-y-4 hidden">
+          <h1 class="text-2xl font-semibold mb-4 text-center">Settings</h1>
+          <!-- Consolidated settings card inspired by AlphaDojo. Each section is a row
+               with a header that can be toggled to reveal its content. -->
+          <div class="glass p-4 rounded-lg settings-container max-w-2xl mx-auto">
+            <!-- My Rules section -->
+            <div class="settings-item">
+              <div class="flex items-center justify-between settings-toggle cursor-pointer py-3">
+                <div>
+                  <h2 class="text-md font-medium">My Rules</h2>
+                  <p class="text-xs text-gray-400">Create and manage trading rules</p>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 chevron text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6" />
+                </svg>
+              </div>
+              <div class="settings-content hidden space-y-4 py-2">
+                <div id="rules-list" class="space-y-2"></div>
+                <div class="flex">
+                  <input
+                    id="new-rule"
+                    type="text"
+                    placeholder="Add new rule"
+                    class="flex-1 px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-l text-gray-200"
+                  />
+                  <button
+                    id="add-rule"
+                    class="px-3 py-2 accent-btn rounded-r text-sm"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="border-t border-white/10"></div>
+            <!-- Limits section -->
+            <div class="settings-item">
+              <div class="flex items-center justify-between settings-toggle cursor-pointer py-3">
+                <div>
+                  <h2 class="text-md font-medium">Limits</h2>
+                  <p class="text-xs text-gray-400">Daily max trades and loss</p>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 chevron text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6" />
+                </svg>
+              </div>
+              <div class="settings-content hidden space-y-4 py-2">
+                <div>
+                  <label class="block text-sm mb-1" for="settings-maxtrades">Max trades/day</label>
+                  <input
+                    id="settings-maxtrades"
+                    type="number"
+                    class="w-full"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm mb-1" for="settings-maxloss">Max loss/day ($)</label>
+                  <input
+                    id="settings-maxloss"
+                    type="number"
+                    class="w-full"
+                  />
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm">Strict mode (require morning routine before review)</span>
+                  <label class="switch">
+                    <input id="settings-strict" type="checkbox" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="border-t border-white/10"></div>
+            <!-- Manage Habits section -->
+            <div class="settings-item">
+              <div class="flex items-center justify-between settings-toggle cursor-pointer py-3">
+                <div>
+                  <h2 class="text-md font-medium">Manage Habits</h2>
+                  <p class="text-xs text-gray-400">Add or remove habits to track</p>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 chevron text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6" />
+                </svg>
+              </div>
+              <div class="settings-content hidden space-y-4 py-2">
+                <div id="settings-habits-list" class="space-y-2"></div>
+                <div class="flex">
+                  <input
+                    id="new-settings-habit"
+                    type="text"
+                    placeholder="Add new habit"
+                    class="flex-1 px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-l text-gray-200"
+                  />
+                  <button id="add-settings-habit" class="px-3 py-2 accent-btn rounded-r text-sm">Add</button>
+                </div>
+              </div>
+            </div>
+            <div class="border-t border-white/10"></div>
+            <!-- Sync section -->
+            <div class="settings-item">
+              <div class="flex items-center justify-between settings-toggle cursor-pointer py-3">
+                <div>
+                  <h2 class="text-md font-medium">Supabase Sync</h2>
+                  <p class="text-xs text-gray-400">Optional cloud sync via Supabase (personal use)</p>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+              <div class="settings-content hidden pb-4 py-2">
+                <div class="space-y-3">
+                  <div>
+                    <label class="block text-xs text-gray-400 mb-1">Supabase project URL</label>
+                    <input id="sync-supabase-url" type="text" placeholder="https://xxxx.supabase.co" class="w-full px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded text-gray-200" />
+                  </div>
+                  <div>
+                    <label class="block text-xs text-gray-400 mb-1">Supabase anon key</label>
+                    <input id="sync-supabase-key" type="password" placeholder="eyJ..." class="w-full px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded text-gray-200" />
+                  </div>
+                  <div>
+                    <label class="block text-xs text-gray-400 mb-1">Login email</label>
+                    <input id="sync-email" type="email" placeholder="you@email.com" class="w-full px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded text-gray-200" />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs text-gray-400 mb-1">Password</label>
+                    <input id="sync-password" type="password" placeholder="••••••••" class="w-full px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded text-gray-200" />
+                  </div>
+
+                  <div class="flex gap-2">
+                    <button id="sync-signin" class="flex-1 px-4 py-2 accent-btn rounded text-sm">Sign in</button>
+                    <button id="sync-signup" class="flex-1 px-4 py-2 rounded text-sm bg-gray-700 hover:bg-gray-600 transition">Create account</button>
+                  </div>
+
+                  <div class="flex gap-2">
+                    <button id="sync-logout" class="flex-1 px-4 py-2 rounded text-sm bg-gray-700 hover:bg-gray-600 transition">Logout</button>
+                  </div>
+
+                  <div class="text-xs text-gray-400">
+                    Status: <span id="sync-status" class="text-gray-200">not configured</span>
+                  </div>
+
+                  <div class="text-xs text-gray-500">
+                    One-time setup: choose a “source of truth”. On the device with the correct data click <b>Push now</b>,
+                    then on the other device click <b>Pull now</b>. After that, changes sync automatically.
+                  </div>
+
+                  <div class="flex gap-2">
+                    <button id="sync-pull" class="flex-1 px-4 py-2 rounded text-sm bg-gray-700 hover:bg-gray-600 transition">Pull now</button>
+                    <button id="sync-push" class="flex-1 px-4 py-2 rounded text-sm bg-gray-700 hover:bg-gray-600 transition">Push now</button>
+                  </div>
+
+                  <div class="text-xs text-gray-500 leading-relaxed">
+                    Supabase table: <code class="text-gray-300">trading_pal_data</code> with columns:
+                    <span class="text-gray-300">user_id</span> (uuid, primary key),
+                    <span class="text-gray-300">data</span> (jsonb),
+                    <span class="text-gray-300">updated_at</span> (timestamptz)
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t border-white/10"></div>
+            <!-- Data section -->
+            <div class="settings-item">
+              <div class="flex items-center justify-between settings-toggle cursor-pointer py-3">
+                <div>
+                  <h2 class="text-md font-medium">Data</h2>
+                  <p class="text-xs text-gray-400">Export or reset your data</p>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 chevron text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6" />
+                </svg>
+              </div>
+              <div class="settings-content hidden space-y-4 py-2">
+                <div class="flex gap-4">
+                  <button
+                    id="export-data"
+                    class="flex-1 px-4 py-2 accent-btn rounded text-sm"
+                  >
+                    Export Data
+                  </button>
+                  <button
+                    id="reset-data"
+                    class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded text-sm"
+                  >
+                    Reset Data
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Lessons Page (All Lessons Overview) -->
+        <section id="page-lessons" class="p-4 space-y-4 hidden max-w-5xl mx-auto">
+          <h1 class="text-2xl font-semibold mb-4 text-center">All Lessons</h1>
+          <!-- Lessons will be injected here via script.js -->
+          <div id="all-lessons-container" class="space-y-4"></div>
+        </section>
+
+        <!-- Activity Page (Recent Activity Overview) -->
+        <section id="page-activity" class="p-4 space-y-4 hidden max-w-5xl mx-auto">
+          <h1 class="text-2xl font-semibold mb-4 text-center">Recent Activity</h1>
+          <!-- Activity entries will be injected here via script.js -->
+          <div id="activity-list" class="space-y-4"></div>
+        </section>
+
+        <!-- Habit Tracker Page -->
+        <section id="page-habits" class="p-4 space-y-4 hidden max-w-5xl mx-auto">
+        <h1 class="text-2xl font-semibold mb-4">Habit Tracker</h1>
+        <!-- A responsive 2×2 grid showing habits, heatmap, streaks and completion rate -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Habits list card -->
+          <div class="glass p-4 rounded-lg habit-list-card">
+            <div class="flex items-center mb-3 gap-2">
+              <!-- Check circle icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <h2 class="text-lg font-semibold">Habits</h2>
+            </div>
+            <!-- Habit checklist for today -->
+            <div class="space-y-2" id="habit-list">
+              <!-- Habits will be injected here -->
+            </div>
+            <!-- Note: habits are managed in Settings. There is no add button here. -->
+          </div>
+          <!-- Completion Heatmap card -->
+          <div class="glass p-4 rounded-lg habit-heatmap-card">
+            <div class="flex items-center mb-3 gap-2">
+              <!-- Calendar progress icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 4h10" />
+                <rect width="20" height="14" x="2" y="7" rx="2" ry="2" stroke-width="2" />
+              </svg>
+              <h2 class="text-lg font-semibold">Progress Calendar</h2>
+            </div>
+            <!-- Calendar heatmap: a 12-month grid of days.  The grid will be generated via script. -->
+            <div id="habit-calendar" class="overflow-x-auto">
+              <!-- Rows for each month will be injected here -->
+            </div>
+            <!-- Legend for the calendar heatmap -->
+            <div class="mt-3 flex items-center justify-between text-xs text-gray-400">
+              <div class="flex items-center gap-1">
+                <span class="heat-square" style="background:#374151"></span>
+                <span>0%</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="heat-square" style="background:#86efac"></span>
+                <span>25%</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="heat-square" style="background:#4ade80"></span>
+                <span>50%</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="heat-square" style="background:#22c55e"></span>
+                <span>75%</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="heat-square" style="background:#16a34a"></span>
+                <span>100%</span>
+              </div>
+            </div>
+          </div>
+          <!-- Streaks summary card -->
+          <div class="glass p-4 rounded-lg habit-streak-card">
+            <div class="flex items-center mb-3 gap-2">
+<h2 class="text-lg font-semibold">Streaks</h2>
+            </div>
+            <!-- Display current and longest streak numbers in separate columns.  The
+                 container uses a fixed height and centres its content both
+                 vertically and horizontally so the numbers sit squarely in the
+                 middle of the card. -->
+            <div class="flex justify-center items-center gap-12 h-40">
+              <div class="text-center">
+                <p id="habit-streak-current" class="text-7xl md:text-8xl font-extrabold leading-none">0</p>
+                <p class="text-xs text-gray-400 mt-1">current</p>
+              </div>
+              <div class="text-center">
+                <p id="habit-streak-longest" class="text-7xl md:text-8xl font-extrabold leading-none">0</p>
+                <p class="text-xs text-gray-400 mt-1">longest</p>
+              </div>
+            </div>
+          </div>
+          <!-- Completion rate chart card -->
+          <div class="glass p-4 rounded-lg habit-rate-card">
+            <div class="flex items-center mb-3 gap-2">
+              <!-- Chart icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19v-6m4 6V9m4 10V3M7 19V13m-4 6V7" />
+              </svg>
+              <h2 class="text-lg font-semibold">Completion Rate</h2>
+            </div>
+            <canvas id="habit-chart" height="180"></canvas>
+          </div>
+        </div>
+        </section>
+      </main>
+      <!-- The global drop‑down navigation menu is now rendered inside the top bar for better alignment. -->
+    </div>
+    <!-- Bottom navigation on small screens -->
+    <nav
+      id="bottom-nav"
+      class="fixed flex md:hidden justify-around text-xs z-20 bottom-nav-glass"
+    >
+      <button class="nav-link flex flex-col items-center" data-page="home">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 10l9-7 9 7v11a2 2 0 01-2 2h-4a2 2 0 01-2-2V9H9v12a2 2 0 01-2 2H5a2 2 0 01-2-2V10z"
+          />
+        </svg>
+        <span>Home</span>
+      </button>
+      <button class="nav-link flex flex-col items-center" data-page="routine">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 17v-6a2 2 0 012-2h2a2 2 0 012 2v6"
+          />
+          <circle cx="12" cy="7" r="4" stroke-width="2" stroke="currentColor" fill="none" />
+        </svg>
+        <span>Routine</span>
+      </button>
+      <button class="nav-link flex flex-col items-center" data-page="review">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M17 20h5v-2a3 3 0 00-3-3h-2v5zM13 7H6a2 2 0 00-2 2v9a2 2 0 002 2h7a2 2 0 002-2v-9a2 2 0 00-2-2z"
+          />
+        </svg>
+        <span>Review</span>
+      </button>
+      <button class="nav-link flex flex-col items-center" data-page="analytics">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M11 19v-6m4 6V9m4 10V3M7 19V13m-4 6V7"
+          />
+        </svg>
+        <span>Analytics</span>
+      </button>
+      <button class="nav-link flex flex-col items-center" data-page="habits">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 13l4 4L19 7"
+          />
+        </svg>
+        <span>Habits</span>
+      </button>
+      <button class="nav-link flex flex-col items-center" data-page="settings">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8c-1.1 0-2 .9-2 2v4h4v-4c0-1.1-.9-2-2-2z"
+          />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 6h12M6 12h12M6 18h12"
+          />
+        </svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+    <!-- Add a version query to force browsers to reload the latest script -->
+    <!-- Force a new version on each update to avoid cache issues -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="script-v3.js?v=3" defer></script>
+  </body>
+</html>
