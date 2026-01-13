@@ -1736,28 +1736,52 @@ async function updateAnalytics(range) {
     rulesChart.update();
   } else {
     rulesChart = new Chart(rulesCtx, {
-      type: 'bar',
+      type: 'doughnut',
       data: {
         labels: ruleLabels,
         datasets: [
           {
             label: 'Rule Breaks',
             data: ruleData,
-            backgroundColor: '#f87171',
+            // Generate distinct colors per slice (stable + readable on dark UI)
+            backgroundColor: ruleLabels.map((_, i) => `hsl(${(i * 57) % 360} 75% 55%)`),
+            borderColor: 'rgba(0,0,0,0.35)',
+            borderWidth: 2,
+            hoverOffset: 6,
           },
         ],
       },
-      options: {        layout: { padding: { top: 6, right: 8, bottom: 8, left: 8 } },
-responsive: true,
+      options: {
+        responsive: true,
         maintainAspectRatio: false,
-scales: {
-          y: { beginAtZero: true, ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-          x: { ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+        cutout: '62%',
+        layout: { padding: { top: 8, right: 8, bottom: 8, left: 8 } },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: {
+              boxWidth: 10,
+              boxHeight: 10,
+              padding: 12,
+              color: 'rgba(255,255,255,0.78)',
+              font: { size: 12 },
+            },
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const v = ctx.parsed ?? 0;
+                const total = (ctx.dataset.data || []).reduce((a, b) => a + (Number(b) || 0), 0) || 0;
+                const pct = total > 0 ? ((v / total) * 100).toFixed(1) : '0.0';
+                return ` ${ctx.label}: ${v} (${pct}%)`;
+              },
+            },
+          },
         },
-        plugins: { legend: { display: false } },
       },
     });
-  }
+}
 
   // Plan compliance distribution donut chart
   const donutCtxElem = document.getElementById('chart-compliance-donut');
