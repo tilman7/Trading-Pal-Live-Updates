@@ -1672,6 +1672,24 @@ async function updateAnalytics(range) {
   const eqCtx = document.getElementById('chart-equity').getContext('2d');
   const compCtx = document.getElementById('chart-compliance').getContext('2d');
   const rulesCtx = document.getElementById('chart-rules').getContext('2d');
+  // Hard-stop Canvas resize loops (prevents infinite card growth)
+  try { rulesCtx.canvas.height = 260; } catch(e) {}
+  const hasRuleData = Array.isArray(ruleData) && ruleData.some((v) => Number(v) > 0);
+  if (!hasRuleData) {
+    // If no rule breaks, don't render a chart (avoids blank Chart.js resize quirks)
+    if (rulesCtx && rulesCtx.canvas) {
+      const ctx2d = rulesCtx.canvas.getContext('2d');
+      if (ctx2d) {
+        ctx2d.clearRect(0,0,rulesCtx.canvas.width,rulesCtx.canvas.height);
+        ctx2d.save();
+        ctx2d.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx2d.font = '12px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+        ctx2d.textAlign = 'center';
+        ctx2d.fillText('No rule breaks in this range', rulesCtx.canvas.width/2, rulesCtx.canvas.height/2);
+        ctx2d.restore();
+      }
+    }
+  } else {
   if (equityChart) {
     equityChart.data.labels = eqLabels;
     equityChart.data.datasets[0].data = eqData;
@@ -1781,6 +1799,8 @@ async function updateAnalytics(range) {
         },
       },
     });
+
+  }
 }
 
   // Plan compliance distribution donut chart
