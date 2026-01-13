@@ -1,0 +1,17 @@
+# Normalize line endings across OS/editor setups
+* text=auto eol=lf
+
+# Ensure web assets are treated as text and kept UTF-8-friendly
+*.html text eol=lf
+*.css  text eol=lf
+*.js   text eol=lf
+*.json text eol=lf
+*.webmanifest text eol=lf
+*.svg  text eol=lf
+
+# Binary assets (don't try to normalize)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
