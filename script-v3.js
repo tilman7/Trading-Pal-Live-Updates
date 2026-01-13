@@ -1747,8 +1747,9 @@ async function updateAnalytics(range) {
           },
         ],
       },
-      options: {
-        scales: {
+      options: {        responsive: true,
+        maintainAspectRatio: false,
+scales: {
           y: { beginAtZero: true, ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255,255,255,0.1)' } },
           x: { ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255,255,255,0.1)' } },
         },
