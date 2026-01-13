@@ -299,7 +299,7 @@
       /*
         Custom form controls to elevate the look and feel of sliders, inputs,
         selects and checkboxes. These rules override browser defaults and
-        Tailwind’s base styles to deliver a premium, custom-designed feel
+        Tailwind's base styles to deliver a premium, custom-designed feel
         that matches the rest of the dark, glassy UI.  Inputs and selects
         share a consistent dark background with subtle borders and rounded
         corners. Checkboxes adopt the accent colour for their check mark
@@ -555,7 +555,7 @@ border: 1px solid rgba(255, 255, 255, 0.15);
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
         padding-top: 0.5rem;
         padding-bottom: 0.5rem;
-        /* Ensure the drop‑down sits above other content and accepts pointer events */
+        /* Ensure the drop-down sits above other content and accepts pointer events */
         z-index: 100;
         pointer-events: auto;
       }
@@ -826,7 +826,7 @@ border: 1px solid rgba(255, 255, 255, 0.15);
         class="hidden"
       >
         <!-- The sidebar nav is intentionally hidden. Navigation is handled by the top bar drop-down. -->
-        <div class="text-2xl font-bold mb-4">Trading Pal</div>
+        <div class="text-2xl font-bold mb-4">Trading Pal</div>
         <button class="nav-link" data-page="home">Home</button>
         <button class="nav-link" data-page="routine">Routine</button>
         <button class="nav-link" data-page="review">Review</button>
@@ -837,8 +837,8 @@ border: 1px solid rgba(255, 255, 255, 0.15);
       <main id="main" class="flex-1 pb-20 md:pb-4 overflow-y-auto">
         <!-- Top bar with logo and menu toggle. The logo is clickable and
              navigates back to the home page. The menu toggle reveals a
-             drop‑down menu containing the navigation links. -->
-        <!-- Top navigation bar with logo and dropdown toggle.  The logo acts as a home link but no inline handlers are used; handlers are defined in script-v3.js.  The drop‑down menu is hidden via inline style and will be toggled via JavaScript. -->
+             drop-down menu containing the navigation links. -->
+        <!-- Top navigation bar with logo and dropdown toggle.  The logo acts as a home link but no inline handlers are used; handlers are defined in script-v3.js.  The drop-down menu is hidden via inline style and will be toggled via JavaScript. -->
         <div id="top-bar" class="flex items-center justify-between p-4 md:p-6 relative">
           <div id="logo" class="text-2xl font-bold cursor-pointer">Trading&nbsp;Pal</div>
           <button id="menu-toggle" class="p-2 rounded focus:outline-none">
@@ -858,14 +858,14 @@ border: 1px solid rgba(255, 255, 255, 0.15);
             <button class="nav-link text-left py-2 px-3 rounded-md hover:bg-gray-700" data-page="settings">Settings</button>
             </nav>
         </div>
-        <!-- Drop-down navigation menu removed here; it will be inserted inside the top‑bar -->
+        <!-- Drop-down navigation menu removed here; it will be inserted inside the top-bar -->
         <!-- Home Page -->
         <section id="page-home" class="p-8 space-y-6">
           <!-- Header row -->
           <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
             <div>
               <!-- Dynamic greeting updated via script to include the user's name -->
-              <h1 id="welcome-message" class="text-3xl md:text-4xl font-semibold tracking-tight">Welcome back, Trading Pal</h1>
+              <h1 id="welcome-message" class="text-3xl md:text-4xl font-semibold tracking-tight">Welcome back, Trading Pal</h1>
               <p id="market-status" class="text-sm text-gray-400 mt-1"></p>
               <div id="extra-info" class="flex flex-wrap gap-3 mt-3 text-sm text-gray-400">
                 <div id="clock" class="px-3 py-1 rounded-full bg-white/5 border border-white/5"></div>
@@ -874,7 +874,7 @@ border: 1px solid rgba(255, 255, 255, 0.15);
             </div>
             <div class="hidden lg:block text-right text-xs text-gray-500">
               <div class="uppercase tracking-widest">Trading Pal</div>
-              <div class="mt-1">Discipline • Routine • Analytics</div>
+              <div class="mt-1">Discipline * Routine * Analytics</div>
             </div>
           </div>
 
@@ -933,7 +933,7 @@ border: 1px solid rgba(255, 255, 255, 0.15);
               <div class="mt-5 grid grid-cols-2 gap-3">
                 <div class="bg-white/5 border border-white/5 rounded-xl p-3">
                   <div class="text-xs text-gray-400">Market</div>
-                  <div id="market-pill" class="mt-1 text-sm font-semibold">—</div>
+                  <div id="market-pill" class="mt-1 text-sm font-semibold">-</div>
                 </div>
                 <div class="bg-white/5 border border-white/5 rounded-xl p-3">
                   <div class="text-xs text-gray-400">Focus</div>
@@ -947,7 +947,7 @@ border: 1px solid rgba(255, 255, 255, 0.15);
               <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                 <div>
                   <h2 class="text-lg font-semibold">Your Streak</h2>
-                  <p id="streak-text" class="text-4xl md:text-5xl font-bold mt-2">0 days</p>
+                  <p id="streak-text" class="text-4xl md:text-5xl font-bold mt-2">0 days</p>
                   <p class="text-sm text-gray-400 mt-2">Small wins. Same process. Every day.</p>
                 </div>
                 <div class="flex flex-col gap-3">
@@ -1121,7 +1121,7 @@ border: 1px solid rgba(255, 255, 255, 0.15);
             </div>
             <div class="glass stat-winrate p-4 rounded-lg flex-1 min-w-[10rem]">
               <p class="text-sm text-gray-400">Win Rate</p>
-              <p id="analytics-winrate" class="text-2xl font-bold">—</p>
+              <p id="analytics-winrate" class="text-2xl font-bold">-</p>
             </div>
           </div>
           <!-- Time filter -->
@@ -1142,7 +1142,7 @@ border: 1px solid rgba(255, 255, 255, 0.15);
               class="time-filter"
               data-range="three"
             >
-              Last 3 Months
+              Last 3 Months
             </button>
           </div>
           <div class="mt-4 md:grid md:grid-cols-2 md:gap-4 space-y-8 md:space-y-0">
@@ -1295,7 +1295,7 @@ border: 1px solid rgba(255, 255, 255, 0.15);
 
                   <div>
                     <label class="block text-xs text-gray-400 mb-1">Password</label>
-                    <input id="sync-password" type="password" placeholder="••••••••" class="w-full px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded text-gray-200" />
+                    <input id="sync-password" type="password" placeholder="********" class="w-full px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded text-gray-200" />
                   </div>
 
                   <div class="flex gap-2">
@@ -1312,7 +1312,7 @@ border: 1px solid rgba(255, 255, 255, 0.15);
                   </div>
 
                   <div class="text-xs text-gray-500">
-                    One-time setup: choose a “source of truth”. On the device with the correct data click <b>Push now</b>,
+                    One-time setup: choose a "source of truth". On the device with the correct data click <b>Push now</b>,
                     then on the other device click <b>Pull now</b>. After that, changes sync automatically.
                   </div>
 
@@ -1380,7 +1380,7 @@ border: 1px solid rgba(255, 255, 255, 0.15);
         <!-- Habit Tracker Page -->
         <section id="page-habits" class="p-4 space-y-4 hidden max-w-5xl mx-auto">
         <h1 class="text-2xl font-semibold mb-4">Habit Tracker</h1>
-        <!-- A responsive 2×2 grid showing habits, heatmap, streaks and completion rate -->
+        <!-- A responsive 2x2 grid showing habits, heatmap, streaks and completion rate -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- Habits list card -->
           <div class="glass p-4 rounded-lg habit-list-card">
@@ -1469,7 +1469,7 @@ border: 1px solid rgba(255, 255, 255, 0.15);
         </div>
         </section>
       </main>
-      <!-- The global drop‑down navigation menu is now rendered inside the top bar for better alignment. -->
+      <!-- The global drop-down navigation menu is now rendered inside the top bar for better alignment. -->
     </div>
     <!-- Bottom navigation on small screens -->
     <nav
