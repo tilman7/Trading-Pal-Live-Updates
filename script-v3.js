@@ -63,7 +63,7 @@ function ensureSampleData() {
   state.reviewEntries = [];
   // Define some sample habits if none exist
   if (!state.habits || state.habits.length === 0) {
-    state.habits = ['Preâ€‘Market Review', 'Daily Journal', 'Exercise', 'Meditation'];
+    state.habits = ['Pre-Market Review', 'Daily Journal', 'Exercise', 'Meditation'];
   }
   // Reset habit entries
   state.habitEntries = [];
@@ -118,7 +118,7 @@ function ensureSampleData() {
 
 function saveData(state) {
   localStorage.setItem('tradingPalData', JSON.stringify(state));
-  // Cloud sync (Supabase) â€“ no-op unless configured.
+  // Cloud sync (Supabase) - no-op unless configured.
   try { window.__tpSync && window.__tpSync.schedulePush && window.__tpSync.schedulePush(state); } catch (e) {}
 }
 
@@ -128,18 +128,18 @@ function saveData(state) {
 // process-focused thinking rather than profits.
 // Quotes derived from the TL;DR document.  All phrases have been
 // translated to English to keep the interface consistent and to focus on
-// processâ€‘driven reminders. Each quote emphasises preparation,
+// process-driven reminders. Each quote emphasises preparation,
 // discipline, and avoiding common cognitive traps.  A random entry from
 // this array is selected each day and cached in localStorage.
 const dailyQuotes = [
   'Focus on clarity and your target.',
-  'Your stop loss defines invalidation â€” respect it.',
+  'Your stop loss defines invalidation - respect it.',
   'Zoom out and prepare. Always.',
   "I'm not P&L. I'm hard work and discipline.",
   'Only take obvious trades.',
   'Force yourself to think from both sides.',
   "Eliminate the 'FVG equals trade' mindset.",
-  "Donâ€™t be too fixed on the higher time frame bias.",
+  "Don't be too fixed on the higher time frame bias.",
   'Trading is a game of probabilities.'
 ];
 
@@ -320,7 +320,7 @@ function updateHomePage() {
     } else {
       greeting = 'Good evening';
     }
-    welcomeElem.textContent = `${greeting}, Tilman! Itâ€™s ${dayNames[day]}.`;
+    welcomeElem.textContent = `${greeting}, Tilman! It's ${dayNames[day]}.`;
   }
   // Recent activity: compile last 5 entries (morning or review).  Only update
   // the list if the corresponding element exists on the page (e.g. on the
@@ -375,7 +375,7 @@ function updateHomePage() {
   if (quoteTarget) {
     if (latestNote && latestNote.note) {
       // Wrap the note in quotation marks to emphasise it as a quote
-      quoteTarget.textContent = `â€œ${latestNote.note}â€`;
+      quoteTarget.textContent = `"${latestNote.note}"`;
     } else {
       quoteTarget.textContent = '';
     }
@@ -501,7 +501,7 @@ function updateHabitsPage() {
   const quoteElem = document.getElementById('latest-lesson-quote');
   if (quoteElem) {
     if (latest && latest.note) {
-      quoteElem.textContent = `â€œ${latest.note}â€`;
+      quoteElem.textContent = `"${latest.note}"`;
     } else {
       quoteElem.textContent = '';
     }
@@ -706,10 +706,10 @@ function updateHabitStreaks(state) {
 }
 
 // Render a full-year calendar grid showing habit completion per day.  Each row
-// represents a month (January = top), and columns correspond to days 1â€“31.  The
+// represents a month (January = top), and columns correspond to days 1-31.  The
 // squares are colour coded based on the percentage of habits completed:
 // 0% -> dark grey, <25% -> light green, <50% -> medium green, <75% -> deeper
-// green, 100% -> full green.  Days beyond a monthâ€™s length are left blank.
+// green, 100% -> full green.  Days beyond a month's length are left blank.
 function updateHabitCalendar(state) {
   const container = document.getElementById('habit-calendar');
   if (!container) return;
@@ -1090,8 +1090,8 @@ function updateLessonsPage() {
   }
   notes.forEach((r) => {
     // Create a stylish card for each lesson.  Cards use a tinted background and
-    // coloured indicator bar on the left to distinguish between planâ€‘followed and
-    // ruleâ€‘break entries.  This layout is inspired by research lists in premium
+    // coloured indicator bar on the left to distinguish between plan-followed and
+    // rule-break entries.  This layout is inspired by research lists in premium
     // dashboards: clean, spacious and easy to scan.
     const card = document.createElement('div');
     // Base glass styling plus slight tint for readability
@@ -1241,9 +1241,9 @@ function updateActivityPage() {
   });
 }
 
-// Override the routine wizard with a simplified flow. StepÂ 0: three yes/no
-// preâ€‘session checks (plan, risk, calm). StepÂ 1: set session limits (max trades,
-// max loss, session). StepÂ 2: final message with a button to start the
+// Override the routine wizard with a simplified flow. Step 0: three yes/no
+// pre-session checks (plan, risk, calm). Step 1: set session limits (max trades,
+// max loss, session). Step 2: final message with a button to start the
 // session and persist the entry.
 function buildRoutineStep(step) {
   const container = document.getElementById('routine-steps');
@@ -1253,7 +1253,7 @@ function buildRoutineStep(step) {
     const div = document.createElement('div');
     // Build a neatly styled checklist. Each item is wrapped in a card-like row
     div.innerHTML = `
-      <h2 class="text-lg font-semibold mb-4 text-center">Preâ€‘session Check</h2>
+      <h2 class="text-lg font-semibold mb-4 text-center">Pre-session Check</h2>
       <div class="space-y-3 max-w-md mx-auto">
         <div class="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
           <input type="checkbox" id="pre-plan" class="w-4 h-4 form-checkbox" />
@@ -1410,7 +1410,7 @@ if (secondaryStreakBtn) {
   if (nextBtn) {
     nextBtn.addEventListener('click', () => {
   if (currentStep === 0) {
-    // Capture values from the preâ€‘session check
+    // Capture values from the pre-session check
     routineState.checklist.plan = document.getElementById('pre-plan').checked;
     routineState.checklist.risk = document.getElementById('pre-risk').checked;
     routineState.checklist.calm = document.getElementById('pre-calm').checked;
@@ -1505,7 +1505,7 @@ document.getElementById('review-form').addEventListener('submit', (e) => {
   updateAnalytics(currentRange);
   // Navigate back to the dashboard after saving a review
   showPage('home');
-  // Avoid intrusive browser popâ€‘ups; reviews are saved silently
+  // Avoid intrusive browser pop-ups; reviews are saved silently
   console.log('Review saved.');
 });
 
@@ -1619,7 +1619,7 @@ async function updateAnalytics(range) {
   setText('analytics-avgpnl', `$${avgPnl.toFixed(2)}`);
 
   const winEl = document.getElementById('analytics-winrate');
-  if (winEl) winEl.textContent = winrate == null ? 'â€”' : `${winrate.toFixed(1)}%`;
+  if (winEl) winEl.textContent = winrate == null ? '-' : `${winrate.toFixed(1)}%`;
 
   // Equity curve: compute cumulative % returns (we treat pnl as dollar, but use relative to base capital of 1k for demonstration)
   let capital = 1000;
@@ -1824,7 +1824,7 @@ function loadSettings() {
       saveData(state);
     });
     const delBtn = document.createElement('button');
-    delBtn.textContent = 'Ã—';
+    delBtn.textContent = 'x';
     delBtn.className = 'ml-2 px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded';
     delBtn.addEventListener('click', () => {
       state.rules.splice(index, 1);
@@ -1864,7 +1864,7 @@ function loadManageHabits() {
       updateHabitsPage();
     });
     const delBtn = document.createElement('button');
-    delBtn.textContent = 'âœ•';
+    delBtn.textContent = 'x';
     delBtn.className = 'px-2 py-1 text-red-400 hover:text-red-300';
     delBtn.addEventListener('click', () => {
       if (confirm(`Delete habit "${habit}"?`)) {
@@ -1942,7 +1942,7 @@ async function updateGoldPrice() {
   try {
     // Fetch live XAU price in USD from a public endpoint.  The API returns
     // the price per ounce in US dollars.  We display this value directly
-    // (around $4,500/oz in lateÂ 2025) without applying any arbitrary
+    // (around $4,500/oz in late 2025) without applying any arbitrary
     // divisor.  If the API structure changes, the xauPrice may need
     // adjustment.
     const res = await fetch('https://data-asg.goldprice.org/dbXRates/USD');
@@ -1967,7 +1967,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(updateGoldPrice, 300000);
 
   // Top bar menu toggle and logo navigation
-  // Set up dropâ€‘down navigation for the top bar.  We avoid using Tailwind's
+  // Set up drop-down navigation for the top bar.  We avoid using Tailwind's
   // `hidden` class here to ensure inline styles can toggle display reliably.
   const menuToggle = document.getElementById('menu-toggle');
   const dropdownNav = document.getElementById('dropdown-nav');
@@ -1982,13 +1982,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (logoElem) {
     logoElem.addEventListener('click', () => {
       showPage('home');
-      // Hide the dropâ€‘down on navigation back to home
+      // Hide the drop-down on navigation back to home
       if (dropdownNav && dropdownNav.style.display !== 'none') {
         dropdownNav.style.display = 'none';
       }
     });
   }
-  // When a link in the dropâ€‘down is clicked, hide the menu so it doesn't remain open
+  // When a link in the drop-down is clicked, hide the menu so it doesn't remain open
   if (dropdownNav) {
     dropdownNav.querySelectorAll('.nav-link').forEach((link) => {
       link.addEventListener('click', () => {
@@ -2140,7 +2140,7 @@ window.addEventListener('load', () => {
 });
 
 // -----------------------------------------------------------------------------
-// Supabase Sync (personal use) â€“ keeps tradingPalData in sync across devices.
+// Supabase Sync (personal use) - keeps tradingPalData in sync across devices.
 // Only activates if URL + anon key are configured in Settings.
 // -----------------------------------------------------------------------------
 (function () {
@@ -2288,7 +2288,7 @@ window.addEventListener('load', () => {
     if (!email) { setStatus('enter email'); return; }
     if (!password) { setStatus('enter password'); return; }
 
-    setStatus('signing inâ€¦');
+    setStatus('signing in...');
     const { data, error } = await client.auth.signInWithPassword({ email, password });
     if (error) {
       setStatus('error: ' + (error.message || 'failed'));
@@ -2311,7 +2311,7 @@ window.addEventListener('load', () => {
     if (!email) { setStatus('enter email'); return; }
     if (!password) { setStatus('enter password'); return; }
 
-    setStatus('creating accountâ€¦');
+    setStatus('creating account...');
     const { data, error } = await client.auth.signUp({ email, password });
     if (error) {
       setStatus('error: ' + (error.message || 'failed'));
@@ -2331,7 +2331,7 @@ window.addEventListener('load', () => {
   async function logout() {
     if (!client) await initClient();
     if (!client) return;
-    setStatus('signing outâ€¦');
+    setStatus('signing out...');
     await teardownRealtime();
     const { error } = await client.auth.signOut();
     if (error) setStatus('error: ' + (error.message || 'failed'));
@@ -2343,7 +2343,7 @@ window.addEventListener('load', () => {
     if (!client) return;
     if (!userId) { setStatus('sign in first'); return; }
 
-    setStatus('pullingâ€¦');
+    setStatus('pulling...');
     const { data, error } = await client.from(TABLE).select('data, updated_at').eq('user_id', userId).maybeSingle();
     if (error) { setStatus('error: ' + (error.message || 'pull failed')); return; }
     if (!data || !data.data) { setStatus('cloud empty (push first)'); return; }
@@ -2359,7 +2359,7 @@ window.addEventListener('load', () => {
     const local = stateOverride || localState();
     const payload = withMeta(local);
 
-    setStatus('pushingâ€¦');
+    setStatus('pushing...');
     const { error } = await client
       .from(TABLE)
       .upsert({ user_id: userId, data: payload, updated_at: nowIso() }, { onConflict: 'user_id' });
