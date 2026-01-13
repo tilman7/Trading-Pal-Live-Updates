@@ -1602,7 +1602,7 @@ async function updateAnalytics(range) {
     }
   });
   const compliance = totalReviews > 0 ? (totalFollowed / totalReviews) * 100 : 0;
-  const avgPnl = totalReviews > 0 ? totalPnl / totalReviews : 0;
+  // avgPnl removed â€“ using total P&L instead
   const winrate = totalReviews > 0
     ? (reviews.filter((r) => Number(r.pnl) > 0).length / totalReviews) * 100
     : null;
@@ -1616,7 +1616,7 @@ async function updateAnalytics(range) {
   setText('analytics-compliance', `${compliance.toFixed(1)}%`);
   setText('analytics-sessions', `${mornings.length}`);
   setText('analytics-trades', `${totalTrades}`);
-  setText('analytics-avgpnl', `$${avgPnl.toFixed(2)}`);
+  setText('analytics-avgpnl', `$${totalPnl.toFixed(2)}`);
 
   const winEl = document.getElementById('analytics-winrate');
   if (winEl) winEl.textContent = winrate == null ? '-' : `${winrate.toFixed(1)}%`;
