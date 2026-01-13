@@ -1747,7 +1747,8 @@ async function updateAnalytics(range) {
           },
         ],
       },
-      options: {        responsive: true,
+      options: {        layout: { padding: { top: 6, right: 8, bottom: 8, left: 8 } },
+responsive: true,
         maintainAspectRatio: false,
 scales: {
           y: { beginAtZero: true, ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255,255,255,0.1)' } },
