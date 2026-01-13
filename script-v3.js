@@ -1569,8 +1569,11 @@ function computeRangeFilter(range) {
     return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   } else if (range === 'month') {
     return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  } else if (range === 'all') {
+    // All time: include everything
+    return new Date(0);
   } else {
-    // last 3 months
+    // Fallback (legacy "three"): last 3 months
     return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
   }
 }
@@ -1650,7 +1653,7 @@ async function updateAnalytics(range) {
       } else if (range === 'month') {
         key = `Week ${getWeekNumber(d)}`;
       } else {
-        // three months: group by month
+        // all time (or legacy three): group by month
         key = d.toLocaleDateString(undefined, { month: 'short' });
       }
       if (!grouped[key]) grouped[key] = { total: 0, follow: 0 };
