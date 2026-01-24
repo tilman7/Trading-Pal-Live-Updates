@@ -320,7 +320,7 @@ function updateHomePage() {
     } else {
       greeting = 'Good evening';
     }
-    welcomeElem.textContent = `${greeting}, Epstein! It's ${dayNames[day]}.`;
+    welcomeElem.textContent = `${greeting}, P. Diddy! It's ${dayNames[day]}.`;
   }
   // Recent activity: compile last 5 entries (morning or review).  Only update
   // the list if the corresponding element exists on the page (e.g. on the
