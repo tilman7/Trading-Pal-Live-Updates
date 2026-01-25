@@ -1590,7 +1590,7 @@ async function updateAnalytics(range) {
   const mornings = state.morningEntries.filter(
     (m) => new Date(m.date) >= fromDate
   );
-  // Plan compliance and average PnL
+  // Plan compliance and P&L summary
   const totalReviews = reviews.length;
   let totalFollowed = 0;
   let totalTrades = 0;
@@ -1609,6 +1609,7 @@ async function updateAnalytics(range) {
   const winrate = totalReviews > 0
     ? (reviews.filter((r) => Number(r.pnl) > 0).length / totalReviews) * 100
     : null;
+  const avgPnlPerTrade = totalTrades > 0 ? totalPnl / totalTrades : 0;
 
   // Safe DOM setters (never crash the whole app if an element is missing)
   const setText = (id, txt) => {
@@ -1620,9 +1621,28 @@ async function updateAnalytics(range) {
   setText('analytics-sessions', `${mornings.length}`);
   setText('analytics-trades', `${totalTrades}`);
   setText('analytics-avgpnl', `$${totalPnl.toFixed(2)}`);
+  setText('analytics-avgpnl-trade', `$${avgPnlPerTrade.toFixed(2)}`);
 
   const winEl = document.getElementById('analytics-winrate');
   if (winEl) winEl.textContent = winrate == null ? '-' : `${winrate.toFixed(1)}%`;
+
+  const emptyState = document.getElementById('analytics-empty');
+  if (emptyState) {
+    emptyState.classList.toggle('hidden', totalReviews > 0);
+  }
+
+  const clearCanvas = (canvas, message) => {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = '12px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+    ctx.restore();
+  };
 
   // Equity curve: compute cumulative % returns (we treat pnl as dollar, but use relative to base capital of 1k for demonstration)
   let capital = 1000;
@@ -1639,115 +1659,142 @@ async function updateAnalytics(range) {
       }));
       eqData.push(pct);
     });
-  // Plan compliance over time: group by week number/month
+  // Plan compliance over time: group by week number/month with stable ordering
   const compLabels = [];
   const compData = [];
   if (reviews.length > 0) {
-    const grouped = {};
+    const grouped = new Map();
     reviews.forEach((r) => {
       const d = new Date(r.date);
       let key;
+      let sortKey;
       if (range === 'week') {
         // day label
         key = d.toLocaleDateString(undefined, { weekday: 'short' });
+        sortKey = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
       } else if (range === 'month') {
         key = `Week ${getWeekNumber(d)}`;
+        const weekStart = new Date(d);
+        weekStart.setDate(d.getDate() - d.getDay());
+        sortKey = weekStart.getTime();
       } else {
         // all time (or legacy three): group by month
         key = d.toLocaleDateString(undefined, { month: 'short' });
+        sortKey = new Date(d.getFullYear(), d.getMonth(), 1).getTime();
       }
-      if (!grouped[key]) grouped[key] = { total: 0, follow: 0 };
-      grouped[key].total++;
-      if (r.followed) grouped[key].follow++;
+      if (!grouped.has(key)) grouped.set(key, { total: 0, follow: 0, sortKey });
+      const entry = grouped.get(key);
+      entry.total++;
+      if (r.followed) entry.follow++;
     });
-    Object.keys(grouped).forEach((key) => {
+    Array.from(grouped.entries())
+      .sort((a, b) => a[1].sortKey - b[1].sortKey)
+      .forEach(([key, entry]) => {
       compLabels.push(key);
-      compData.push((grouped[key].follow / grouped[key].total) * 100);
+      compData.push((entry.follow / entry.total) * 100);
     });
   }
   // Rule break distribution
   const ruleLabels = Object.keys(ruleCounts);
   const ruleData = ruleLabels.map((k) => ruleCounts[k]);
   // Create or update charts
-  const eqCtx = document.getElementById('chart-equity').getContext('2d');
-  const compCtx = document.getElementById('chart-compliance').getContext('2d');
-  const rulesCtx = document.getElementById('chart-rules').getContext('2d');
-  // Hard-stop Canvas resize loops (prevents infinite card growth)
-  try { rulesCtx.canvas.height = 260; } catch(e) {}
-  const hasRuleData = Array.isArray(ruleData) && ruleData.some((v) => Number(v) > 0);
-  if (!hasRuleData) {
-    // If no rule breaks, don't render a chart (avoids blank Chart.js resize quirks)
-    if (rulesCtx && rulesCtx.canvas) {
-      const ctx2d = rulesCtx.canvas.getContext('2d');
-      if (ctx2d) {
-        ctx2d.clearRect(0,0,rulesCtx.canvas.width,rulesCtx.canvas.height);
-        ctx2d.save();
-        ctx2d.fillStyle = 'rgba(255,255,255,0.55)';
-        ctx2d.font = '12px system-ui, -apple-system, Segoe UI, Roboto, Arial';
-        ctx2d.textAlign = 'center';
-        ctx2d.fillText('No rule breaks in this range', rulesCtx.canvas.width/2, rulesCtx.canvas.height/2);
-        ctx2d.restore();
+  const eqCanvas = document.getElementById('chart-equity');
+  const compCanvas = document.getElementById('chart-compliance');
+  const rulesCanvas = document.getElementById('chart-rules');
+  const eqCtx = eqCanvas ? eqCanvas.getContext('2d') : null;
+  const compCtx = compCanvas ? compCanvas.getContext('2d') : null;
+  const rulesCtx = rulesCanvas ? rulesCanvas.getContext('2d') : null;
+
+  if (eqCtx) {
+    if (totalReviews === 0) {
+      if (equityChart) {
+        equityChart.destroy();
+        equityChart = null;
       }
+      clearCanvas(eqCanvas, 'No equity data yet');
+    } else if (equityChart) {
+      equityChart.data.labels = eqLabels;
+      equityChart.data.datasets[0].data = eqData;
+      equityChart.update();
+    } else {
+      equityChart = new Chart(eqCtx, {
+        type: 'line',
+        data: {
+          labels: eqLabels,
+          datasets: [
+            {
+              label: 'Equity %',
+              data: eqData,
+              borderColor: '#60a5fa',
+              backgroundColor: 'rgba(96,165,250,0.2)',
+              tension: 0.2,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#d1d5db' },
+              grid: { color: 'rgba(255,255,255,0.1)' },
+            },
+            x: { ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+          },
+          plugins: { legend: { display: false } },
+        },
+      });
     }
-  } else {
-  if (equityChart) {
-    equityChart.data.labels = eqLabels;
-    equityChart.data.datasets[0].data = eqData;
-    equityChart.update();
-  } else {
-    equityChart = new Chart(eqCtx, {
-      type: 'line',
-      data: {
-        labels: eqLabels,
-        datasets: [
-          {
-            label: 'Equity %',
-            data: eqData,
-            borderColor: '#60a5fa',
-            backgroundColor: 'rgba(96,165,250,0.2)',
-            tension: 0.2,
-          },
-        ],
-      },
-      options: {
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { color: '#d1d5db' },
-            grid: { color: 'rgba(255,255,255,0.1)' },
-          },
-          x: { ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-        },
-        plugins: { legend: { display: false } },
-      },
-    });
   }
-  if (complianceChart) {
-    complianceChart.data.labels = compLabels;
-    complianceChart.data.datasets[0].data = compData;
-    complianceChart.update();
-  } else {
-    complianceChart = new Chart(compCtx, {
-      type: 'bar',
-      data: {
-        labels: compLabels,
-        datasets: [
-          {
-            label: 'Compliance %',
-            data: compData,
-            backgroundColor: '#34d399',
-          },
-        ],
-      },
-      options: {
-        scales: {
-          y: { beginAtZero: true, ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-          x: { ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+
+  if (compCtx) {
+    if (totalReviews === 0) {
+      if (complianceChart) {
+        complianceChart.destroy();
+        complianceChart = null;
+      }
+      clearCanvas(compCanvas, 'No compliance data yet');
+    } else if (complianceChart) {
+      complianceChart.data.labels = compLabels;
+      complianceChart.data.datasets[0].data = compData;
+      complianceChart.update();
+    } else {
+      complianceChart = new Chart(compCtx, {
+        type: 'bar',
+        data: {
+          labels: compLabels,
+          datasets: [
+            {
+              label: 'Compliance %',
+              data: compData,
+              backgroundColor: '#34d399',
+            },
+          ],
         },
-        plugins: { legend: { display: false } },
-      },
-    });
+        options: {
+          scales: {
+            y: { beginAtZero: true, ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+            x: { ticks: { color: '#d1d5db' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+          },
+          plugins: { legend: { display: false } },
+        },
+      });
+    }
   }
+
+  const hasRuleData = Array.isArray(ruleData) && ruleData.some((v) => Number(v) > 0);
+  if (!rulesCtx) return;
+  // Hard-stop Canvas resize loops (prevents infinite card growth)
+  try { rulesCtx.canvas.height = 260; } catch (e) {}
+  if (!hasRuleData) {
+    if (rulesChart) {
+      rulesChart.destroy();
+      rulesChart = null;
+    }
+    // If no rule breaks, don't render a chart (avoids blank Chart.js resize quirks)
+    clearCanvas(rulesCanvas, 'No rule breaks in this range');
+    return;
+  }
+
   if (rulesChart) {
     rulesChart.data.labels = ruleLabels;
     rulesChart.data.datasets[0].data = ruleData;
@@ -1799,7 +1846,6 @@ async function updateAnalytics(range) {
         },
       },
     });
-
   }
 }
 
