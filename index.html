@@ -1119,6 +1119,17 @@ border: 1px solid rgba(255, 255, 255, 0.15);
               <p class="text-sm text-gray-400">Total P&amp;L</p>
               <p id="analytics-avgpnl" class="text-2xl font-bold">$0</p>
             </div>
+            <div class="glass p-4 rounded-lg flex-1 min-w-[10rem] bg-white/5 border border-white/10">
+              <p class="text-sm text-gray-400">Win Rate</p>
+              <p id="analytics-winrate" class="text-2xl font-bold">-</p>
+            </div>
+            <div class="glass p-4 rounded-lg flex-1 min-w-[10rem] bg-white/5 border border-white/10">
+              <p class="text-sm text-gray-400">Avg P&amp;L / Trade</p>
+              <p id="analytics-avgpnl-trade" class="text-2xl font-bold">$0</p>
+            </div>
+          </div>
+          <div id="analytics-empty" class="hidden glass p-4 rounded-lg text-center text-sm text-gray-400">
+            No analytics yet. Complete your morning routine and evening review to populate insights.
           </div>
           <!-- Time filter -->
           <div class="analytics-filter-bar flex gap-2 mt-4">
